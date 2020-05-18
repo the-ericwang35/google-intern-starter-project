@@ -33,7 +33,7 @@ public class FoodFinderController {
 
             Map<String, AttributeValue> attributes = new HashMap<>();
             attributes.put("Ingredient", AttributeValue.stringAttributeValue(ingredient));
-            span.addAnnotation("Searching for ingredient: ", attributes);
+            span.addAnnotation("Annotation: Ingredient: ", attributes);
 
             List<Integer> suppliers = getSuppliers(ingredient);
 
