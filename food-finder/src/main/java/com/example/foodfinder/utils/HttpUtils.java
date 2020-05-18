@@ -20,8 +20,9 @@ public class HttpUtils {
         }
     };
 
-    public void callUrl(Tracer tracer, String url, String spanName) {
+    public static String callUrl(Tracer tracer, String url, String spanName) {
         Span span = SpanUtils.buildSpan(tracer, spanName).startSpan();
+        String line = "";
 
         try (Scope s = tracer.withSpan(span)) {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
@@ -29,10 +30,14 @@ public class HttpUtils {
             conn.setRequestMethod(HttpMethod.GET.name());
 
             BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String line = rd.readLine();
+            line = rd.readLine();
+            rd.close();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        span.end();
+        return line;
     }
 }
