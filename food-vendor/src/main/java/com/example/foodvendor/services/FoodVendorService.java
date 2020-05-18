@@ -5,7 +5,6 @@ import com.example.foodvendor.models.Ingredient;
 
 public class FoodVendorService {
 
-    // TODO: Inject this.
     FoodVendorDAO foodVendorDAO = new FoodVendorDAO();
 
     public Ingredient getIngredient(int id, String ingredient) {
