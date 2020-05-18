@@ -16,8 +16,7 @@ import java.util.Map;
 @RestController
 public class FoodSupplierController {
 
-    // TODO: Inject this.
-    private FoodSupplierService service = new FoodSupplierService();
+    private final FoodSupplierService service = new FoodSupplierService();
     private static final Tracer tracer = Tracing.getTracer();
 
     @GetMapping("/ingredients")
@@ -37,5 +36,10 @@ public class FoodSupplierController {
 
         span.end();
         return vendors;
+    }
+
+    @GetMapping("/")
+    public String home() {
+        return "Success";
     }
 }

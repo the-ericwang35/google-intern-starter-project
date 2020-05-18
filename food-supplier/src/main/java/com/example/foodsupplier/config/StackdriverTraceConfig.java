@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 
 @Configuration
-public class StackdriverConfig {
-    public StackdriverConfig() throws IOException {
+public class StackdriverTraceConfig {
+    public StackdriverTraceConfig() throws IOException {
         StackdriverTraceExporter.createAndRegister(
                 StackdriverTraceConfiguration.builder()
                         .setProjectId("ejwang-intern-project")
