@@ -14,8 +14,7 @@ public class FoodVendorController {
     @GetMapping("/inventory")
     public Ingredient getInventory(@RequestParam(value = "id") int id,
                                    @RequestParam(value = "ingredient") String ingredient) {
-        Ingredient queriedIngredient = foodVendorService.getIngredient(id, ingredient);
-        return queriedIngredient;
+        return foodVendorService.getIngredient(id, ingredient);
     }
 
     @GetMapping("/")

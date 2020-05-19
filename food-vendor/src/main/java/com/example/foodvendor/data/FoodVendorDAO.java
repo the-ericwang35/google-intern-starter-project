@@ -1,6 +1,11 @@
 package com.example.foodvendor.data;
 
 import com.example.foodvendor.models.Ingredient;
+import io.opencensus.trace.AttributeValue;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
+import io.opencensus.trace.samplers.Samplers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,15 +20,30 @@ public class FoodVendorDAO {
 
     private Map<Integer, Map<String, Ingredient>> vendorToIngredientsMap;
 
+    private static final Tracer tracer = Tracing.getTracer();
+
     public FoodVendorDAO() {
         setupVendorToIngredientsMap();
     }
 
     public Ingredient getIngredient(int id, String ingredient) {
+        Span span = tracer.spanBuilder("FoodVendor starting query...")
+                .setRecordEvents(true)
+                .setSampler(Samplers.alwaysSample())
+                .startSpan();
+
         Map<String, Ingredient> vendorInventory = vendorToIngredientsMap.get(id);
         if (vendorInventory == null) {
+            span.end();
             return null;
         }
+
+        Map<String, AttributeValue> attributes = new HashMap<>();
+        attributes.put("Storage type",
+                AttributeValue.stringAttributeValue(vendorInventory.getClass().getName()));
+        span.addAnnotation("Annotation: storage type ", attributes);
+
+        span.end();
         return vendorInventory.get(ingredient);
     }
 
