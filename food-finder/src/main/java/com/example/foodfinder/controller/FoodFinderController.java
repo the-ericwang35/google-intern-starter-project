@@ -1,43 +1,42 @@
 package com.example.foodfinder.controller;
 
 import com.example.foodfinder.models.Ingredient;
-import com.example.foodfinder.utils.SpanUtils;
 import com.example.foodfinder.services.GetIngredientService;
 import com.example.foodfinder.services.GetSuppliersService;
-import io.opencensus.common.Scope;
-import io.opencensus.trace.AttributeValue;
-import io.opencensus.trace.Span;
-import io.opencensus.trace.Tracer;
-import io.opencensus.trace.Tracing;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.exporters.logging.LoggingSpanExporter;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.opentelemetry.sdk.trace.export.SimpleSpansProcessor;
+import io.opentelemetry.trace.Span;
+import io.opentelemetry.trace.Tracer;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class FoodFinderController {
 
-    private static final Tracer tracer = Tracing.getTracer();
+    private static final SpanProcessor spanProcessor =
+            SimpleSpansProcessor.create(new LoggingSpanExporter());
+    // Supplying empty string yields a default Tracer implementation, which is fine for this app.
+    private static final Tracer tracer = OpenTelemetrySdk.getTracerProvider().get("");
 
     @GetMapping("/ingredient")
     public List<Ingredient> getIngredient(@RequestParam(value = "ingredient") String ingredient) {
+        OpenTelemetrySdk.getTracerProvider().addSpanProcessor(spanProcessor);
+        Span span = tracer.spanBuilder("Finding Food").startSpan();
 
-        try (Scope ss = SpanUtils.buildSpan(tracer,"Finding Food")
-                .startScopedSpan()) {
-
-            Span span = tracer.getCurrentSpan();
-
-            Map<String, AttributeValue> attributes = new HashMap<>();
-            attributes.put("Ingredient", AttributeValue.stringAttributeValue(ingredient));
-            span.addAnnotation("Annotation: Ingredient: ", attributes);
-
+        try (Scope ss = tracer.withSpan(span)) {
+            span.setAttribute("Ingredient", ingredient);
             List<Integer> suppliers = getSuppliers(ingredient);
-
             return getInventory(ingredient, suppliers);
+        } finally {
+            spanProcessor.shutdown();
+            span.end();
         }
     }
 
@@ -54,7 +53,6 @@ public class FoodFinderController {
             ingredients.add(ingredientInfo);
         }
         return ingredients;
-
     }
 
     @GetMapping("/")

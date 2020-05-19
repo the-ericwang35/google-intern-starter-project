@@ -3,7 +3,7 @@ package com.example.foodfinder.services;
 import com.example.foodfinder.models.Ingredient;
 import com.example.foodfinder.utils.HttpUtils;
 import com.google.gson.Gson;
-import io.opencensus.trace.Tracer;
+import io.opentelemetry.trace.Tracer;
 import org.springframework.web.util.UriComponentsBuilder;
 
 public class GetIngredientService {
