@@ -48,6 +48,9 @@ public class TraceFilter extends OncePerRequestFilter {
             spanContext = textFormat.extract(request, getter);
             spanBuilder = tracer.spanBuilderWithRemoteParent(spanName, spanContext);
         } catch (SpanContextParseException e) {
+            // If we're not given a parent span from the request
+            // create the span without a parent.
+            System.out.println("Parent span was not extracted.");
             spanBuilder = tracer.spanBuilder(spanName);
         }
 

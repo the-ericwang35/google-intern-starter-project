@@ -34,6 +34,7 @@ public class FoodVendorDAO {
 
         Map<String, Ingredient> vendorInventory = vendorToIngredientsMap.get(id);
         if (vendorInventory == null) {
+            span.end();
             return null;
         }
 
