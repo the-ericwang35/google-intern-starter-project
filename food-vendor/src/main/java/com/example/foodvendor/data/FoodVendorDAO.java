@@ -1,11 +1,13 @@
 package com.example.foodvendor.data;
 
 import com.example.foodvendor.models.Ingredient;
-import io.opencensus.trace.AttributeValue;
-import io.opencensus.trace.Span;
-import io.opencensus.trace.Tracer;
-import io.opencensus.trace.Tracing;
-import io.opencensus.trace.samplers.Samplers;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.exporters.logging.LoggingSpanExporter;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.opentelemetry.sdk.trace.export.SimpleSpansProcessor;
+import io.opentelemetry.trace.Span;
+import io.opentelemetry.trace.Tracer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,31 +22,29 @@ public class FoodVendorDAO {
 
     private Map<Integer, Map<String, Ingredient>> vendorToIngredientsMap;
 
-    private static final Tracer tracer = Tracing.getTracer();
+    private static final SpanProcessor spanProcessor =
+            SimpleSpansProcessor.create(new LoggingSpanExporter());
+    private static final Tracer tracer = OpenTelemetrySdk.getTracerProvider().get("");
 
     public FoodVendorDAO() {
         setupVendorToIngredientsMap();
     }
 
     public Ingredient getIngredient(int id, String ingredient) {
-        Span span = tracer.spanBuilder("FoodVendor starting query...")
-                .setRecordEvents(true)
-                .setSampler(Samplers.alwaysSample())
-                .startSpan();
+        OpenTelemetrySdk.getTracerProvider().addSpanProcessor(spanProcessor);
+        Span span = tracer.spanBuilder("FoodVendor starting query...").startSpan();
 
-        Map<String, Ingredient> vendorInventory = vendorToIngredientsMap.get(id);
-        if (vendorInventory == null) {
+        try (Scope scope = tracer.withSpan(span)) {
+            Map<String, Ingredient> vendorInventory = vendorToIngredientsMap.get(id);
+            if (vendorInventory == null) {
+                return null;
+            }
+            span.setAttribute("Storage Type", vendorInventory.getClass().getName());
+            return vendorInventory.get(ingredient);
+        } finally {
             span.end();
-            return null;
+            spanProcessor.shutdown();
         }
-
-        Map<String, AttributeValue> attributes = new HashMap<>();
-        attributes.put("Storage type",
-                AttributeValue.stringAttributeValue(vendorInventory.getClass().getName()));
-        span.addAnnotation("Annotation: storage type ", attributes);
-
-        span.end();
-        return vendorInventory.get(ingredient);
     }
 
     private void setupVendorToIngredientsMap() {

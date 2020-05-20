@@ -1,14 +1,14 @@
 package com.example.foodvendor.config;
 
-import io.opencensus.common.Scope;
-import io.opencensus.trace.Span;
-import io.opencensus.trace.SpanBuilder;
-import io.opencensus.trace.SpanContext;
-import io.opencensus.trace.Tracer;
-import io.opencensus.trace.Tracing;
-import io.opencensus.trace.propagation.SpanContextParseException;
-import io.opencensus.trace.propagation.TextFormat;
-import io.opencensus.trace.samplers.Samplers;
+import io.grpc.Context;
+import io.opentelemetry.OpenTelemetry;
+import io.opentelemetry.context.ContextUtils;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.HttpTextFormat;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.trace.Span;
+import io.opentelemetry.trace.Tracer;
+import org.springframework.lang.Nullable;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -24,14 +24,17 @@ import java.io.IOException;
 
 public class TraceFilter extends OncePerRequestFilter {
 
-    private static final Tracer tracer = Tracing.getTracer();
-    private static final TextFormat textFormat = Tracing.getPropagationComponent().getB3Format();
-    private static final TextFormat.Getter<HttpServletRequest> getter = new TextFormat.Getter<>() {
-        @Override
-        public String get(HttpServletRequest httpRequest, String s) {
-            return httpRequest.getHeader(s);
-        }
-    };
+    // Supplying empty string yields a default Tracer implementation, which is fine for this app.
+    private static final Tracer tracer = OpenTelemetrySdk.getTracerProvider().get("");
+    private static final HttpTextFormat.Getter<HttpServletRequest> getter =
+            new HttpTextFormat.Getter<>() {
+                @Nullable
+                @Override
+                public String get(HttpServletRequest httpServletRequest, String s) {
+                    return httpServletRequest.getHeader(s);
+                }
+            };
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -39,30 +42,22 @@ public class TraceFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        SpanContext spanContext;
-        SpanBuilder spanBuilder;
+        Context extractedContext = OpenTelemetry.getPropagators().getHttpTextFormat()
+                .extract(Context.current(), request, getter);
+        Span serverSpan = null;
 
-        String spanName = request.getMethod() + " " + request.getRequestURI();
+        try (Scope scope = ContextUtils.withScopedContext(extractedContext)) {
+            String spanName = request.getMethod() + " " + request.getRequestURI();
+            serverSpan = tracer.spanBuilder(spanName).setSpanKind(Span.Kind.SERVER).startSpan();
+            serverSpan.setAttribute("http.method", "GET");
+            serverSpan.setAttribute("http.scheme", "http");
+            serverSpan.setAttribute("http.target", "/inventory");
 
-        try {
-            spanContext = textFormat.extract(request, getter);
-            spanBuilder = tracer.spanBuilderWithRemoteParent(spanName, spanContext);
-        } catch (SpanContextParseException e) {
-            // If we're not given a parent span from the request
-            // create the span without a parent.
-            System.out.println("Parent span was not extracted.");
-            spanBuilder = tracer.spanBuilder(spanName);
-        }
-
-        Span span = spanBuilder
-                .setRecordEvents(true)
-                .setSampler(Samplers.alwaysSample())
-                .startSpan();
-
-        try (Scope s = tracer.withSpan(span)) {
             filterChain.doFilter(request, response);
+        } finally {
+            if (serverSpan != null) {
+                serverSpan.end();
+            }
         }
-
-        span.end();
     }
 }
