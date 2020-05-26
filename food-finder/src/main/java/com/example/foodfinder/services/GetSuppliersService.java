@@ -1,7 +1,7 @@
 package com.example.foodfinder.services;
 
 import com.example.foodfinder.utils.HttpUtils;
-import io.opencensus.trace.Tracer;
+import io.opentelemetry.trace.Tracer;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
