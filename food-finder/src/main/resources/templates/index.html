@@ -1,0 +1,15 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Food Finder</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<h1>Search for an Ingredient!</h1>
+<form action="#" th:action="@{/ingredient}" th:object="${form}" method="get">
+    <p>Ingredient: <input type="text" th:field="*{ingredient}"></p>
+    <input type="submit" value="Search">
+</form>
+
+</body>
+</html>

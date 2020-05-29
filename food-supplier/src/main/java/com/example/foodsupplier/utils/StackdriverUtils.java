@@ -21,8 +21,8 @@ public class StackdriverUtils {
                 Aggregation.Distribution.create(
                         BucketBoundaries.create(
                                 Arrays.asList(
-                                        // Suppliers in buckets: [>=0 suppliers, >=3 suppliers, >=5 suppliers]
-                                        0.0, 3.0, 5.0)));
+                                        // Suppliers in buckets: [>=0 suppliers, >=1 supplier, >=3 suppliers, >=5 suppliers]
+                                        0.0, 2.0, 3.0, 5.0)));
 
         View view =
                 View.create(

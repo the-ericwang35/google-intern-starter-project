@@ -18,7 +18,7 @@ public class GetIngredientService {
         String response = HttpUtils.callUrl(
                 tracer,
                 urlWithParams,
-                String.format("Calling food supplier service %d", supplierId));
+                String.format("Calling food vendor %d", supplierId));
 
         return new Gson().fromJson(response, Ingredient.class);
     }

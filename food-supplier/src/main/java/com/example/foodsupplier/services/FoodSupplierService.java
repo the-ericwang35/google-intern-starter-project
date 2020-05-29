@@ -7,7 +7,13 @@ public class FoodSupplierService {
     FoodSupplierDAO foodSupplierDAO = new FoodSupplierDAO();
 
     public String getVendors(String ingredient) {
-        return foodSupplierDAO.getVendors(ingredient);
+        String vendors = "";
+        try {
+            vendors = foodSupplierDAO.getVendors(ingredient);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return vendors;
     }
 }
 

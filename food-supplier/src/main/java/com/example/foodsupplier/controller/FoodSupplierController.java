@@ -32,7 +32,7 @@ public class FoodSupplierController {
         Map<String, AttributeValue> attributes = new HashMap<>();
         attributes.put("Number of suppliers",
                 AttributeValue.longAttributeValue(vendors.split(",").length));
-        span.addAnnotation("Annotation: Number of suppliers", attributes);
+        span.addAnnotation("Number of suppliers", attributes);
 
         span.end();
         return vendors;

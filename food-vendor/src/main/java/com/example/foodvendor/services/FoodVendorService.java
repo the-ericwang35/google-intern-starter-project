@@ -8,6 +8,12 @@ public class FoodVendorService {
     FoodVendorDAO foodVendorDAO = new FoodVendorDAO();
 
     public Ingredient getIngredient(int id, String ingredient) {
-        return foodVendorDAO.getIngredient(id, ingredient);
+        Ingredient ingredientRes = null;
+        try {
+            ingredientRes = foodVendorDAO.getIngredient(id, ingredient);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return ingredientRes;
     }
 }

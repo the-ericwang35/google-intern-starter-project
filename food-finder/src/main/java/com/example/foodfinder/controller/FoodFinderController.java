@@ -1,5 +1,6 @@
 package com.example.foodfinder.controller;
 
+import com.example.foodfinder.models.Form;
 import com.example.foodfinder.models.Ingredient;
 import com.example.foodfinder.services.GetIngredientService;
 import com.example.foodfinder.services.GetSuppliersService;
@@ -10,14 +11,17 @@ import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpansProcessor;
 import io.opentelemetry.trace.Span;
 import io.opentelemetry.trace.Tracer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@RestController
+@Controller
 public class FoodFinderController {
 
     private static final SpanProcessor spanProcessor =
@@ -26,14 +30,20 @@ public class FoodFinderController {
     private static final Tracer tracer = OpenTelemetrySdk.getTracerProvider().get("");
 
     @GetMapping("/ingredient")
-    public List<Ingredient> getIngredient(@RequestParam(value = "ingredient") String ingredient) {
+    public String getIngredient(@ModelAttribute Form form, Model model) {
         OpenTelemetrySdk.getTracerProvider().addSpanProcessor(spanProcessor);
-        Span span = tracer.spanBuilder("Finding Food").startSpan();
+        Span span = tracer.spanBuilder("Food-finer running...").startSpan();
+
+        String ingredient = form.getIngredient();
+        System.out.println("HERE: " + ingredient);
 
         try (Scope ss = tracer.withSpan(span)) {
             span.setAttribute("Ingredient", ingredient);
             List<Integer> suppliers = getSuppliers(ingredient);
-            return getInventory(ingredient, suppliers);
+            List<Ingredient> ingredients = getInventory(ingredient, suppliers);
+            model.addAttribute("ingredients", ingredients);
+            return "ingredients.html";
+
         } finally {
             spanProcessor.shutdown();
             span.end();
@@ -50,13 +60,20 @@ public class FoodFinderController {
         List<Ingredient> ingredients = new ArrayList<>();
         for (int supplierId : suppliers) {
             Ingredient ingredientInfo = getIngredientService.callSuppliers(tracer, supplierId, ingredient);
-            ingredients.add(ingredientInfo);
+            if (ingredientInfo != null) {
+                ingredients.add(ingredientInfo);
+            }
         }
         return ingredients;
     }
 
-    @GetMapping("/")
-    public String home() {
-        return "Success";
+    @GetMapping("/errorfour")
+    public ResponseEntity<HttpStatus> errorFour() {
+        return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body(null);
+    }
+
+    @GetMapping("/errorfive")
+    public ResponseEntity<HttpStatus> errorFive() {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
     }
 }
